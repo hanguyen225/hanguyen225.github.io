@@ -195,6 +195,20 @@ function mapNationalityToCode(nationality) {
   return nationalityMap.get(normalized) || "";
 }
 
+function mapGenderToCode(gender) {
+  const val = String(gender || "").trim().toLowerCase();
+  if (!val) {
+    return "";
+  }
+  if (val.startsWith("n") || val.startsWith("f") || val.includes("nữ") || val.includes("female")) {
+    return "F";
+  }
+  if (val.startsWith("m") || val.startsWith("nam") || val.includes("male")) {
+    return "M";
+  }
+  return "M";
+}
+
 function toTransformedRows(rows) {
   const nonEmptyRows = rows.filter((row) => row.some((cell) => normalizeCellValue(cell) !== ""));
 
@@ -211,7 +225,7 @@ function toTransformedRows(rows) {
         name: normalizeCellValue(row[2]).toUpperCase(),
         dob: normalizeCellValue(row[4]),
         birthdateCorrectUpTo: "D",
-        gender: normalizeCellValue(row[3]),
+        gender: mapGenderToCode(row[3]),
         nationalityCode: mapNationalityToCode(row[6]),
         passportNumber: normalizeCellValue(row[5]),
         arrivalDate,
@@ -227,7 +241,7 @@ function toTransformedRows(rows) {
       name: normalizeCellValue(row[2]).toUpperCase(),
       dob: normalizeCellValue(row[4]),
       birthdateCorrectUpTo: "D",
-      gender: normalizeCellValue(row[3]),
+      gender: mapGenderToCode(row[3]),
       nationalityCode: mapNationalityToCode(row[6]),
       passportNumber: normalizeCellValue(row[5]),
       arrivalDate: fallback,
@@ -394,44 +408,38 @@ function handleTransformedEdit(event) {
     return;
   }
 
-  transformedRows[rowIndex][cell.dataset.field] = normalizeCellValue(cell.textContent);
+  let value = normalizeCellValue(cell.textContent);
+  if (cell.dataset.field === "gender") {
+    value = mapGenderToCode(value);
+    cell.textContent = value;
+  }
+
+  transformedRows[rowIndex][cell.dataset.field] = value;
 }
 
 function buildTransformedXml(rows) {
-  const now = new Date().toISOString();
   const rowsXml = rows
     .map((row, rowIndex) => {
-      const cells = transformedColumns
-        .map((column) => {
-          const field = {
-            name: "name",
-            DOB: "dob",
-            birthdate_correct_up_to: "birthdateCorrectUpTo",
-            gender: "gender",
-            nationality_code: "nationalityCode",
-            passport_number: "passportNumber",
-            arrival_date: "arrivalDate",
-            expected_leaving_date: "expectedLeavingDate",
-            checkout_date: "checkoutDate",
-            room_number: "roomNumber",
-          }[column.tag];
-
-          return `        <${column.tag}>${escapeXml(row[field] ?? "")}</${column.tag}>`;
-        })
-        .join("\n");
-
-      return `      <row index="${rowIndex + 1}">\n${cells}\n      </row>`;
+      return `    <THONG_TIN_KHACH>
+        <so_thu_tu>${rowIndex + 1}</so_thu_tu>
+        <ho_ten>${escapeXml(row.name ?? "")}</ho_ten>
+        <ngay_sinh>${escapeXml(row.dob ?? "")}</ngay_sinh>
+        <ngay_sinh_dung_den>${escapeXml(row.birthdateCorrectUpTo ?? "")}</ngay_sinh_dung_den>
+        <gioi_tinh>${escapeXml(row.gender ?? "")}</gioi_tinh>
+        <ma_quoc_tich>${escapeXml(row.nationalityCode ?? "")}</ma_quoc_tich>
+        <so_ho_chieu>${escapeXml(row.passportNumber ?? "")}</so_ho_chieu>
+        <so_phong>${escapeXml(row.roomNumber ?? "")}</so_phong>
+        <ngay_den>${escapeXml(row.arrivalDate ?? "")}</ngay_den>
+        <ngay_di_du_kien>${escapeXml(row.expectedLeavingDate ?? "")}</ngay_di_du_kien>
+        <ngay_tra_phong>${escapeXml(row.checkoutDate ?? "")}</ngay_tra_phong>
+    </THONG_TIN_KHACH>`;
     })
     .join("\n");
 
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<workbook exportedAt="${escapeXml(now)}" mode="transformed">
-  <worksheet name="Sheet1">
-    <rows>
-${rowsXml || "      <!-- no rows -->"}
-    </rows>
-  </worksheet>
-</workbook>
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<KHAI_BAO_TAM_TRU>
+${rowsXml || "    <!-- no rows -->"}
+</KHAI_BAO_TAM_TRU>
 `;
 }
 
