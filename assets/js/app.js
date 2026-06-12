@@ -1,3 +1,26 @@
+import {
+  normalizeCellValue,
+  normalizeCountryName,
+  parseTimeInToDate,
+  formatDateDdMmYyyy,
+  addDays,
+} from "./utils.js";
+
+import {
+  parsePaste,
+  parseMapping,
+  mapGenderToCode,
+} from "./parser.js";
+
+import {
+  renderPreview,
+  renderTransformedPreview,
+} from "./renderer.js";
+
+import {
+  buildTransformedXml,
+} from "./xmlBuilder.js";
+
 const columns = [
   { key: "time in", tag: "time_in" },
   { key: "gmail", tag: "gmail" },
@@ -44,169 +67,12 @@ let transformedRows = [];
 let nationalityMap = new Map();
 let currentView = "original";
 
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
-
-function escapeXml(value) {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
-
-function normalizeCellValue(value) {
-  return value == null ? "" : String(value).trim();
-}
-
-function looksLikeHeader(row) {
-  const normalized = row.map((cell) => normalizeCellValue(cell).toLowerCase());
-  return columns.every((column, index) => normalized[index] === column.key.toLowerCase());
-}
-
-function parsePaste(text) {
-  const source = String(text || "").replace(/\r/g, "");
-  const lines = source.split("\n").filter((line) => line.trim() !== "");
-
-  if (lines.length === 0) {
-    return { rows: [], warnings: ["Paste rows into the input area first."] };
-  }
-
-  const rawRows = lines.map((line) => line.split("\t"));
-  const warnings = [];
-
-  let rows = rawRows;
-  if (rows.length > 0 && looksLikeHeader(rows[0])) {
-    rows = rows.slice(1);
-    warnings.push("Detected and removed a header row that matched the expected column names.");
-  }
-
-  if (rows.length > maxRows) {
-    warnings.push(`Input had ${rows.length} rows; only the first ${maxRows} rows were kept.`);
-    rows = rows.slice(0, maxRows);
-  }
-
-  const normalizedRows = rows.map((row, index) => {
-    if (row.length > columns.length) {
-      warnings.push(`Row ${index + 1} has extra cells; only the first ${columns.length} columns were used.`);
-    }
-
-    return columns.map((_, colIndex) => normalizeCellValue(row[colIndex] ?? ""));
-  });
-
-  return { rows: normalizedRows, warnings };
-}
-
-function normalizeCountryName(value) {
-  return String(value || "")
-    .trim()
-    .replace(/^\"|\"$/g, "")
-    .toLowerCase();
-}
-
-function parseMapping(text) {
-  const map = new Map();
-  const source = String(text || "").replace(/\r/g, "");
-  const lines = source.split("\n");
-
-  lines.forEach((line) => {
-    line = line.trim();
-    if (!line) {
-      return;
-    }
-
-    const lastCommaIndex = line.lastIndexOf(",");
-    if (lastCommaIndex === -1) {
-      return;
-    }
-
-    const leftPart = line.substring(0, lastCommaIndex).trim();
-    const code = line.substring(lastCommaIndex + 1).trim().toUpperCase();
-
-    // Map full entry (e.g. "AFG - Afghanistan" -> "AFG")
-    const fullNormalized = normalizeCountryName(leftPart);
-    if (fullNormalized && code) {
-      map.set(fullNormalized, code);
-    }
-
-    // Also map name-only fallback (e.g. "Afghanistan" -> "AFG")
-    const hyphenIndex = leftPart.indexOf(" - ");
-    if (hyphenIndex !== -1) {
-      const nameOnlyNormalized = normalizeCountryName(leftPart.substring(hyphenIndex + 3));
-      if (nameOnlyNormalized && code) {
-        map.set(nameOnlyNormalized, code);
-      }
-    }
-  });
-
-  return map;
-}
-
-function parseTimeInToDate(value) {
-  const raw = String(value || "").trim();
-  const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+\d{1,2}:\d{2})?$/);
-  if (!match) {
-    return null;
-  }
-
-  const month = Number(match[1]);
-  const day = Number(match[2]);
-  const year = Number(match[3]);
-
-  const candidate = new Date(year, month - 1, day);
-  if (
-    Number.isNaN(candidate.getTime()) ||
-    candidate.getFullYear() !== year ||
-    candidate.getMonth() + 1 !== month ||
-    candidate.getDate() !== day
-  ) {
-    return null;
-  }
-
-  return candidate;
-}
-
-function formatDateDdMmYyyy(dateObject) {
-  const day = String(dateObject.getDate()).padStart(2, "0");
-  const month = String(dateObject.getMonth() + 1).padStart(2, "0");
-  const year = dateObject.getFullYear();
-  return `${day}/${month}/${year}`;
-}
-
-function addDays(dateObject, days) {
-  const result = new Date(dateObject);
-  result.setDate(result.getDate() + days);
-  return result;
-}
-
 function mapNationalityToCode(nationality) {
   const normalized = normalizeCountryName(nationality);
   if (!normalized) {
     return "";
   }
-
   return nationalityMap.get(normalized) || "";
-}
-
-function mapGenderToCode(gender) {
-  const val = String(gender || "").trim().toLowerCase();
-  if (!val) {
-    return "";
-  }
-  if (val.startsWith("n") || val.startsWith("f") || val.includes("nữ") || val.includes("female")) {
-    return "F";
-  }
-  if (val.startsWith("m") || val.startsWith("nam") || val.includes("male")) {
-    return "M";
-  }
-  return "M";
 }
 
 function toTransformedRows(rows) {
@@ -252,58 +118,6 @@ function toTransformedRows(rows) {
   });
 }
 
-function renderPreview(rows) {
-  const fillRows = [];
-
-  for (let index = 0; index < maxRows; index += 1) {
-    const row = rows[index] || Array(columns.length).fill("");
-    const isEmpty = !rows[index];
-    const cells = row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("");
-
-    fillRows.push(`
-      <tr class="${isEmpty ? "empty" : ""}">
-        <td>${index + 1}</td>
-        ${cells}
-      </tr>
-    `);
-  }
-
-  previewBody.innerHTML = fillRows.join("");
-}
-
-function renderTransformedPreview(rows) {
-  if (rows.length === 0) {
-    transformedBody.innerHTML = `
-      <tr class="empty">
-        <td colspan="11">No transformed rows yet. Paste source rows and load preview first.</td>
-      </tr>
-    `;
-    return;
-  }
-
-  const html = rows
-    .map(
-      (row, index) => `
-        <tr data-row-index="${index}">
-          <td>${escapeHtml(row.row)}</td>
-          <td class="editable-cell" contenteditable="true" data-field="name">${escapeHtml(row.name)}</td>
-          <td class="editable-cell" contenteditable="true" data-field="dob">${escapeHtml(row.dob)}</td>
-          <td class="editable-cell" contenteditable="true" data-field="birthdateCorrectUpTo">${escapeHtml(row.birthdateCorrectUpTo)}</td>
-          <td class="editable-cell" contenteditable="true" data-field="gender">${escapeHtml(row.gender)}</td>
-          <td class="editable-cell" contenteditable="true" data-field="nationalityCode">${escapeHtml(row.nationalityCode)}</td>
-          <td class="editable-cell" contenteditable="true" data-field="passportNumber">${escapeHtml(row.passportNumber)}</td>
-          <td class="editable-cell" contenteditable="true" data-field="arrivalDate">${escapeHtml(row.arrivalDate)}</td>
-          <td class="editable-cell" contenteditable="true" data-field="expectedLeavingDate">${escapeHtml(row.expectedLeavingDate)}</td>
-          <td class="editable-cell" contenteditable="true" data-field="checkoutDate">${escapeHtml(row.checkoutDate)}</td>
-          <td class="editable-cell" contenteditable="true" data-field="roomNumber">${escapeHtml(row.roomNumber)}</td>
-        </tr>
-      `,
-    )
-    .join("");
-
-  transformedBody.innerHTML = html;
-}
-
 function updateStatus(rows, warnings = []) {
   const parts = [];
 
@@ -334,18 +148,20 @@ function updateMappingStatus() {
     return;
   }
 
-  mappingStatus.textContent = `Loaded ${count} nationality mapping row${count === 1 ? "" : "s"} from 'nationality' file.`;
+  // Divide size by 2 since each line maps both name-only and prefix-name fallback
+  const uniqueCount = Math.ceil(count / 2);
+  mappingStatus.textContent = `Loaded ${uniqueCount} nationality mapping row${uniqueCount === 1 ? "" : "s"} from 'nationality' file.`;
 }
 
 function refreshTransformed() {
   transformedRows = toTransformedRows(currentRows);
-  renderTransformedPreview(transformedRows);
+  renderTransformedPreview(transformedRows, transformedBody);
 }
 
 function loadPreview() {
-  const parsed = parsePaste(pasteArea.value);
+  const parsed = parsePaste(pasteArea.value, columns, maxRows);
   currentRows = parsed.rows;
-  renderPreview(currentRows);
+  renderPreview(currentRows, previewBody, maxRows, columns);
   refreshTransformed();
   updateStatus(currentRows, parsed.warnings);
 }
@@ -385,7 +201,7 @@ function switchView(targetView) {
   showTransformedButton.setAttribute("aria-selected", showOriginal ? "false" : "true");
 
   if (!showOriginal) {
-    renderTransformedPreview(transformedRows);
+    renderTransformedPreview(transformedRows, transformedBody);
     rowCount.textContent = `${transformedRows.length} transformed row${transformedRows.length === 1 ? "" : "s"}`;
   } else {
     rowCount.textContent = `${currentRows.length} row${currentRows.length === 1 ? "" : "s"} loaded`;
@@ -415,32 +231,6 @@ function handleTransformedEdit(event) {
   }
 
   transformedRows[rowIndex][cell.dataset.field] = value;
-}
-
-function buildTransformedXml(rows) {
-  const rowsXml = rows
-    .map((row, rowIndex) => {
-      return `    <THONG_TIN_KHACH>
-        <so_thu_tu>${rowIndex + 1}</so_thu_tu>
-        <ho_ten>${escapeXml(row.name ?? "")}</ho_ten>
-        <ngay_sinh>${escapeXml(row.dob ?? "")}</ngay_sinh>
-        <ngay_sinh_dung_den>${escapeXml(row.birthdateCorrectUpTo ?? "")}</ngay_sinh_dung_den>
-        <gioi_tinh>${escapeXml(row.gender ?? "")}</gioi_tinh>
-        <ma_quoc_tich>${escapeXml(row.nationalityCode ?? "")}</ma_quoc_tich>
-        <so_ho_chieu>${escapeXml(row.passportNumber ?? "")}</so_ho_chieu>
-        <so_phong>${escapeXml(row.roomNumber ?? "")}</so_phong>
-        <ngay_den>${escapeXml(row.arrivalDate ?? "")}</ngay_den>
-        <ngay_di_du_kien>${escapeXml(row.expectedLeavingDate ?? "")}</ngay_di_du_kien>
-        <ngay_tra_phong>${escapeXml(row.checkoutDate ?? "")}</ngay_tra_phong>
-    </THONG_TIN_KHACH>`;
-    })
-    .join("\n");
-
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<KHAI_BAO_TAM_TRU>
-${rowsXml || "    <!-- no rows -->"}
-</KHAI_BAO_TAM_TRU>
-`;
 }
 
 function exportXml() {
@@ -473,8 +263,8 @@ function clearAll() {
   pasteArea.value = "";
   currentRows = [];
   transformedRows = [];
-  renderPreview([]);
-  renderTransformedPreview([]);
+  renderPreview([], previewBody, maxRows, columns);
+  renderTransformedPreview([], transformedBody);
   switchView("original");
   updateStatus([]);
 }
@@ -493,8 +283,8 @@ pasteArea.addEventListener("input", () => {
   if (pasteArea.value.trim() === "") {
     currentRows = [];
     transformedRows = [];
-    renderPreview([]);
-    renderTransformedPreview([]);
+    renderPreview([], previewBody, maxRows, columns);
+    renderTransformedPreview([], transformedBody);
     updateStatus([]);
   }
 });
@@ -513,7 +303,7 @@ transformedBody.addEventListener("keydown", (event) => {
   }
 });
 
-renderPreview([]);
-renderTransformedPreview([]);
+renderPreview([], previewBody, maxRows, columns);
+renderTransformedPreview([], transformedBody);
 switchView("original");
 loadNationalityFile();
