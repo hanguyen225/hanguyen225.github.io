@@ -2,8 +2,8 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 // Supabase Configuration
 // Leave these empty to use local IndexedDB. Fill them to connect to your cloud PostgreSQL database.
-const SUPABASE_URL = "https://rfftlxfxhkspxirlgyhb.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJmZnRseGZ4aGtzcHhpcmxneWhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNDk3ODAsImV4cCI6MjA5NjgyNTc4MH0.3B_LFceKFe5o8ggjWyJMw67B_2KzU19S12GuiS092Gs"; // PASTE YOUR ANON PUBLIC KEY HERE (starts with eyJhb...)
+const SUPABASE_URL = "";
+const SUPABASE_ANON_KEY = "";
 
 const useSupabase = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 let supabase = null;

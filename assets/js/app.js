@@ -377,7 +377,28 @@ function clearAll() {
 }
 
 function loadDemoData() {
-  pasteArea.value = "25/07/2016 10:00\tphamhungthai@gmail.com\tPHAM HUNG THAI\tNam/Male\t10/10/1976\t51N5337648\tRussia\t28/07/2017\t123456789\t3";
+  pasteArea.value = [
+    "06/11/2026 00:35\tmelissa.brown91@gmail.com\tMelissa Brown\tNữ/ Female\t14/07/1991\tpassA7834x\tGBR - United Kingdom of Great Britain and Northern Ireland\t06/12/2026\t1.28475E+12\t1",
+    "06/11/2026 00:37\tjacob.turner88@hotmail.com\tJacob Turner\tNam/ Male\t23/11/1988\tturnB5521q\tGBR - United Kingdom of Great Britain and Northern Ireland\t06/12/2026\t9.87321E+11\t1",
+    "06/11/2026 00:40\tsara.goldman77@gmail.com\tSara Goldman\tNữ/ Female\t05/04/1977\tgoldC9812w\tISR - Israel\t06/13/2026\t1.14789E+12\t2",
+    "06/11/2026 00:42\tdaniel.levi84@yahoo.com\tDaniel Levi\tNam/ Male\t17/09/1984\tleviD6619p\tISR - Israel\t06/13/2026\t8.56123E+11\t2",
+    "06/11/2026 00:44\temma.wilson95@gmail.com\tEmma Wilson\tNữ/ Female\t29/01/1995\twilsE3377m\tGBR - United Kingdom of Great Britain and Northern Ireland\t06/12/2026\t1.30294E+12\t1",
+    "06/11/2026 00:47\tnoah.carter90@hotmail.com\tNoah Carter\tNam/ Male\t12/08/1990\tcartF8821n\tGBR - United Kingdom of Great Britain and Northern Ireland\t06/12/2026\t7.98452E+11\t1",
+    "06/11/2026 00:49\trachel.cohen86@gmail.com\tRachel Cohen\tNữ/ Female\t18/02/1986\tcoheG4412k\tISR - Israel\t06/13/2026\t1.02358E+12\t2",
+    "06/11/2026 00:51\tethan.shapiro92@gmail.com\tEthan Shapiro\tNam/ Male\t04/12/1992\tshapH1948j\tISR - Israel\t06/13/2026\t9.43125E+11\t2",
+    "06/11/2026 00:54\tolivia.green99@yahoo.com\tOlivia Green\tNữ/ Female\t07/06/1999\tgreeJ7735h\tGBR - United Kingdom of Great Britain and Northern Ireland\t06/12/2026\t1.21877E+12\t1",
+    "06/11/2026 00:56\tliam.evans87@gmail.com\tLiam Evans\tNam/ Male\t30/03/1987\tevanK5689g\tGBR - United Kingdom of Great Britain and Northern Ireland\t06/12/2026\t8.75439E+11\t1",
+    "06/11/2026 00:58\tmaya.rosen94@hotmail.com\tMaya Rosen\tNữ/ Female\t22/10/1994\troseL1134f\tISR - Israel\t06/13/2026\t1.17384E+12\t2",
+    "06/11/2026 01:01\taaron.katz89@gmail.com\tAaron Katz\tNam/ Male\t15/05/1989\tkatzM9032d\tISR - Israel\t06/13/2026\t9.65281E+11\t2",
+    "06/11/2026 01:04\tchloe.harris96@gmail.com\tChloe Harris\tNữ/ Female\t11/09/1996\tharrN4417s\tGBR - United Kingdom of Great Britain and Northern Ireland\t06/12/2026\t1.33125E+12\t1",
+    "06/11/2026 01:07\tlucas.morgan85@yahoo.com\tLucas Morgan\tNam/ Male\t26/07/1985\tmorgP7628a\tGBR - United Kingdom of Great Britain and Northern Ireland\t06/12/2026\t8.91734E+11\t1",
+    "06/11/2026 01:10\tyael.peretz93@gmail.com\tYael Peretz\tNữ/ Female\t03/01/1993\tpereQ1189z\tISR - Israel\t06/13/2026\t1.05273E+12\t2",
+    "06/11/2026 01:13\tomer.mizrahi88@hotmail.com\tOmer Mizrahi\tNam/ Male\t21/11/1988\tmizrR5527x\tISR - Israel\t06/13/2026\t9.87416E+11\t2",
+    "06/11/2026 01:16\tsophia.baker97@gmail.com\tSophia Baker\tNữ/ Female\t09/04/1997\tbakeS2281v\tGBR - United Kingdom of Great Britain and Northern Ireland\t06/12/2026\t1.28753E+12\t1",
+    "06/11/2026 01:18\tjames.foster91@gmail.com\tJames Foster\tNam/ Male\t14/12/1991\tfostT7742b\tGBR - United Kingdom of Great Britain and Northern Ireland\t06/12/2026\t8.63127E+11\t1",
+    "06/11/2026 01:21\ttamar.benami90@yahoo.com\tTamar Benami\tNữ/ Female\t27/08/1990\tbenaU9918c\tISR - Israel\t06/13/2026\t1.10865E+12\t2",
+    "06/11/2026 01:24\tyonatan.barak95@gmail.com\tYonatan Barak\tNam/ Male\t06/02/1995\tbaraV4473l\tISR - Israel\t06/13/2026\t9.20837E+11\t2",
+  ].join("\n");
   loadPreview();
 }
 
