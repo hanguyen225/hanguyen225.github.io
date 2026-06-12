@@ -1,8 +1,23 @@
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+// Supabase Configuration
+// Leave these empty to use local IndexedDB. Fill them to connect to your cloud PostgreSQL database.
+const SUPABASE_URL = "https://rfftlxfxhkspxirlgyhb.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJmZnRseGZ4aGtzcHhpcmxneWhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNDk3ODAsImV4cCI6MjA5NjgyNTc4MH0.3B_LFceKFe5o8ggjWyJMw67B_2KzU19S12GuiS092Gs"; // PASTE YOUR ANON PUBLIC KEY HERE (starts with eyJhb...)
+
+const useSupabase = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+let supabase = null;
+
+if (useSupabase) {
+  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
+// Local IndexedDB configuration
 const DB_NAME = "GuestDatabase";
 const DB_VERSION = 1;
 const STORE_NAME = "guests";
 
-export function openDB() {
+function openDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
@@ -19,6 +34,31 @@ export function openDB() {
 }
 
 export async function addGuests(guests) {
+  if (useSupabase) {
+    const records = guests.map((guest) => ({
+      name: guest.name,
+      dob: guest.dob,
+      birthdate_correct_up_to: guest.birthdateCorrectUpTo,
+      gender: guest.gender,
+      nationality_code: guest.nationalityCode,
+      passport_number: guest.passportNumber,
+      arrival_date: guest.arrivalDate,
+      expected_leaving_date: guest.expectedLeavingDate,
+      checkout_date: guest.checkoutDate,
+      room_number: guest.roomNumber,
+    }));
+
+    const { data, error } = await supabase
+      .from("guests")
+      .insert(records);
+
+    if (error) {
+      throw error;
+    }
+    return data;
+  }
+
+  // Fallback to IndexedDB
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([STORE_NAME], "readwrite");
@@ -46,6 +86,33 @@ export async function addGuests(guests) {
 }
 
 export async function getAllGuests() {
+  if (useSupabase) {
+    const { data, error } = await supabase
+      .from("guests")
+      .select("*")
+      .order("id", { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return (data || []).map((g) => ({
+      id: g.id,
+      name: g.name,
+      dob: g.dob,
+      birthdateCorrectUpTo: g.birthdate_correct_up_to,
+      gender: g.gender,
+      nationalityCode: g.nationality_code,
+      passportNumber: g.passport_number,
+      arrivalDate: g.arrival_date,
+      expectedLeavingDate: g.expected_leaving_date,
+      checkoutDate: g.checkout_date,
+      roomNumber: g.room_number,
+      loggedAt: g.logged_at,
+    }));
+  }
+
+  // Fallback to IndexedDB
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([STORE_NAME], "readonly");
@@ -58,6 +125,19 @@ export async function getAllGuests() {
 }
 
 export async function deleteGuest(id) {
+  if (useSupabase) {
+    const { error } = await supabase
+      .from("guests")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      throw error;
+    }
+    return;
+  }
+
+  // Fallback to IndexedDB
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([STORE_NAME], "readwrite");
@@ -70,6 +150,19 @@ export async function deleteGuest(id) {
 }
 
 export async function clearAllGuests() {
+  if (useSupabase) {
+    const { error } = await supabase
+      .from("guests")
+      .delete()
+      .neq("id", 0); // Deletes all rows in Supabase since id is auto-incrementing non-zero
+
+    if (error) {
+      throw error;
+    }
+    return;
+  }
+
+  // Fallback to IndexedDB
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([STORE_NAME], "readwrite");
