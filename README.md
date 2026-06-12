@@ -8,7 +8,7 @@ Static GitHub Pages tool that accepts pasted table data from Google Sheets or Ex
 - Supports up to 100 rows in the source workspace
 - Switchable preview modes: original source table and transformed editable table
 - Transformed fields for order number, uppercase name, nationality code, and date calculations
-- Nationality mapping paste support using lines like `AFG - Afghanistan<TAB>AFG`
+- Automatic nationality mapping loaded from the `nationality` file at startup
 - Client-side XML export from transformed editable rows (no backend)
 
 ## Project Structure
@@ -16,18 +16,17 @@ Static GitHub Pages tool that accepts pasted table data from Google Sheets or Ex
 - `index.html` - page markup, dual preview tables, and controls
 - `assets/css/main.css` - styles for layout, table switching, and editable cells
 - `assets/js/app.js` - source parsing, transformed-row generation, mapping parser, and XML export logic
-- `assets/data/nationality-mapping-template.txt` - sample nationality mapping lines for paste input
+- `nationality` - list of 3-letter codes and country names mapped at page load
 - `_config.yml` - GitHub Pages config
 
 ## Usage
 
-1. Open the site.
+1. Open the site. (Requires a local HTTP server locally due to browser CORS policies on file fetches).
 2. Paste source rows from Excel or Google Sheets into the spreadsheet input.
-3. Optionally paste nationality mapping lines in the mapping input and click **Load mapping**.
-4. Click **Load preview** to refresh both original and transformed views.
-5. Use the switch buttons above the preview table to move between original and transformed views.
-6. Edit transformed cells directly in the transformed table when needed.
-7. Click **Export XML** to download XML from transformed rows.
+3. Click **Load preview** to refresh both original and transformed views.
+4. Use the switch buttons above the preview table to move between original and transformed views.
+5. Edit transformed cells directly in the transformed table when needed.
+6. Click **Export XML** to download XML from transformed rows.
 
 ## Date Rules
 

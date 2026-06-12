@@ -2,36 +2,36 @@ const columns = [
   { key: "time in", tag: "time_in" },
   { key: "gmail", tag: "gmail" },
   { key: "name", tag: "name" },
+  { key: "gender", tag: "gender" },
   { key: "DOB", tag: "dob" },
   { key: "passport number", tag: "passport_number" },
   { key: "nationality", tag: "nationality" },
-  { key: "check-in date", tag: "check_in_date" },
   { key: "check-out date", tag: "check_out_date" },
   { key: "phone number", tag: "phone_number" },
   { key: "number of date staying", tag: "number_of_date_staying" },
 ];
 
 const transformedColumns = [
-  { key: "order number", tag: "order_number" },
   { key: "name", tag: "name" },
+  { key: "DOB", tag: "DOB" },
   { key: "birthdate correct up to", tag: "birthdate_correct_up_to" },
+  { key: "gender", tag: "gender" },
   { key: "nationality code", tag: "nationality_code" },
   { key: "passport number", tag: "passport_number" },
   { key: "arrival date", tag: "arrival_date" },
   { key: "expected leaving date", tag: "expected_leaving_date" },
   { key: "checkout date", tag: "checkout_date" },
+  { key: "room number", tag: "room_number" },
 ];
 
 const maxRows = 100;
 const previewBody = document.getElementById("previewBody");
 const transformedBody = document.getElementById("transformedBody");
 const pasteArea = document.getElementById("pasteArea");
-const mappingArea = document.getElementById("mappingArea");
 const statusBox = document.getElementById("statusBox");
 const mappingStatus = document.getElementById("mappingStatus");
 const rowCount = document.getElementById("rowCount");
 const loadButton = document.getElementById("loadButton");
-const loadMappingButton = document.getElementById("loadMappingButton");
 const exportButton = document.getElementById("exportButton");
 const clearButton = document.getElementById("clearButton");
 const showOriginalButton = document.getElementById("showOriginalButton");
@@ -113,27 +113,37 @@ function normalizeCountryName(value) {
 
 function parseMapping(text) {
   const map = new Map();
-  const source = String(text || "").replace(/\r/g, "\n");
-  const lineParts = source.split("\n");
+  const source = String(text || "").replace(/\r/g, "");
+  const lines = source.split("\n");
 
-  lineParts.forEach((line) => {
-    const chunks = line
-      .split(/(?=\b[A-Z]{3}\s*-\s*[^\t\n]+\t)/g)
-      .map((part) => part.trim())
-      .filter((part) => part.length > 0);
+  lines.forEach((line) => {
+    line = line.trim();
+    if (!line) {
+      return;
+    }
 
-    chunks.forEach((chunk) => {
-      const match = chunk.match(/^"?([A-Z]{3})\s*-\s*([^\t"]+)"?\t([A-Z]{3})$/i);
-      if (!match) {
-        return;
+    const lastCommaIndex = line.lastIndexOf(",");
+    if (lastCommaIndex === -1) {
+      return;
+    }
+
+    const leftPart = line.substring(0, lastCommaIndex).trim();
+    const code = line.substring(lastCommaIndex + 1).trim().toUpperCase();
+
+    // Map full entry (e.g. "AFG - Afghanistan" -> "AFG")
+    const fullNormalized = normalizeCountryName(leftPart);
+    if (fullNormalized && code) {
+      map.set(fullNormalized, code);
+    }
+
+    // Also map name-only fallback (e.g. "Afghanistan" -> "AFG")
+    const hyphenIndex = leftPart.indexOf(" - ");
+    if (hyphenIndex !== -1) {
+      const nameOnlyNormalized = normalizeCountryName(leftPart.substring(hyphenIndex + 3));
+      if (nameOnlyNormalized && code) {
+        map.set(nameOnlyNormalized, code);
       }
-
-      const countryName = normalizeCountryName(match[2]);
-      const code = String(match[3] || "").trim().toUpperCase();
-      if (countryName && code) {
-        map.set(countryName, code);
-      }
-    });
+    }
   });
 
   return map;
@@ -198,28 +208,32 @@ function toTransformedRows(rows) {
       const expectedDate = formatDateDdMmYyyy(addDays(parsedArrival, safeDays));
       return {
         row: String(index + 1),
-        orderNumber: String(index + 1),
         name: normalizeCellValue(row[2]).toUpperCase(),
+        dob: normalizeCellValue(row[4]),
         birthdateCorrectUpTo: "D",
-        nationalityCode: mapNationalityToCode(row[5]),
-        passportNumber: normalizeCellValue(row[4]),
+        gender: normalizeCellValue(row[3]),
+        nationalityCode: mapNationalityToCode(row[6]),
+        passportNumber: normalizeCellValue(row[5]),
         arrivalDate,
         expectedLeavingDate: expectedDate,
         checkoutDate: expectedDate,
+        roomNumber: "",
       };
     }
 
     const fallback = normalizeCellValue(row[0]);
     return {
       row: String(index + 1),
-      orderNumber: String(index + 1),
       name: normalizeCellValue(row[2]).toUpperCase(),
+      dob: normalizeCellValue(row[4]),
       birthdateCorrectUpTo: "D",
-      nationalityCode: mapNationalityToCode(row[5]),
-      passportNumber: normalizeCellValue(row[4]),
+      gender: normalizeCellValue(row[3]),
+      nationalityCode: mapNationalityToCode(row[6]),
+      passportNumber: normalizeCellValue(row[5]),
       arrivalDate: fallback,
       expectedLeavingDate: fallback,
       checkoutDate: fallback,
+      roomNumber: "",
     };
   });
 }
@@ -247,7 +261,7 @@ function renderTransformedPreview(rows) {
   if (rows.length === 0) {
     transformedBody.innerHTML = `
       <tr class="empty">
-        <td colspan="9">No transformed rows yet. Paste source rows and load preview first.</td>
+        <td colspan="11">No transformed rows yet. Paste source rows and load preview first.</td>
       </tr>
     `;
     return;
@@ -258,14 +272,16 @@ function renderTransformedPreview(rows) {
       (row, index) => `
         <tr data-row-index="${index}">
           <td>${escapeHtml(row.row)}</td>
-          <td class="editable-cell" contenteditable="true" data-field="orderNumber">${escapeHtml(row.orderNumber)}</td>
           <td class="editable-cell" contenteditable="true" data-field="name">${escapeHtml(row.name)}</td>
+          <td class="editable-cell" contenteditable="true" data-field="dob">${escapeHtml(row.dob)}</td>
           <td class="editable-cell" contenteditable="true" data-field="birthdateCorrectUpTo">${escapeHtml(row.birthdateCorrectUpTo)}</td>
+          <td class="editable-cell" contenteditable="true" data-field="gender">${escapeHtml(row.gender)}</td>
           <td class="editable-cell" contenteditable="true" data-field="nationalityCode">${escapeHtml(row.nationalityCode)}</td>
           <td class="editable-cell" contenteditable="true" data-field="passportNumber">${escapeHtml(row.passportNumber)}</td>
           <td class="editable-cell" contenteditable="true" data-field="arrivalDate">${escapeHtml(row.arrivalDate)}</td>
           <td class="editable-cell" contenteditable="true" data-field="expectedLeavingDate">${escapeHtml(row.expectedLeavingDate)}</td>
           <td class="editable-cell" contenteditable="true" data-field="checkoutDate">${escapeHtml(row.checkoutDate)}</td>
+          <td class="editable-cell" contenteditable="true" data-field="roomNumber">${escapeHtml(row.roomNumber)}</td>
         </tr>
       `,
     )
@@ -304,7 +320,7 @@ function updateMappingStatus() {
     return;
   }
 
-  mappingStatus.textContent = `Loaded ${count} nationality mapping row${count === 1 ? "" : "s"}.`;
+  mappingStatus.textContent = `Loaded ${count} nationality mapping row${count === 1 ? "" : "s"} from 'nationality' file.`;
 }
 
 function refreshTransformed() {
@@ -320,13 +336,24 @@ function loadPreview() {
   updateStatus(currentRows, parsed.warnings);
 }
 
-function loadMapping() {
-  nationalityMap = parseMapping(mappingArea.value);
-  updateMappingStatus();
+async function loadNationalityFile() {
+  try {
+    mappingStatus.textContent = "Loading nationality mapping from file...";
+    const response = await fetch("./nationality");
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const text = await response.text();
+    nationalityMap = parseMapping(text);
+    updateMappingStatus();
 
-  if (currentRows.length > 0) {
-    refreshTransformed();
-    updateStatus(currentRows);
+    if (currentRows.length > 0) {
+      refreshTransformed();
+      updateStatus(currentRows);
+    }
+  } catch (error) {
+    console.error("Error loading nationality file:", error);
+    mappingStatus.textContent = `Error loading nationality file: ${error.message}. Codes in transformed view can still be edited manually.`;
   }
 }
 
@@ -377,14 +404,16 @@ function buildTransformedXml(rows) {
       const cells = transformedColumns
         .map((column) => {
           const field = {
-            order_number: "orderNumber",
             name: "name",
+            DOB: "dob",
             birthdate_correct_up_to: "birthdateCorrectUpTo",
+            gender: "gender",
             nationality_code: "nationalityCode",
             passport_number: "passportNumber",
             arrival_date: "arrivalDate",
             expected_leaving_date: "expectedLeavingDate",
             checkout_date: "checkoutDate",
+            room_number: "roomNumber",
           }[column.tag];
 
           return `        <${column.tag}>${escapeXml(row[field] ?? "")}</${column.tag}>`;
@@ -434,19 +463,15 @@ function exportXml() {
 
 function clearAll() {
   pasteArea.value = "";
-  mappingArea.value = "";
   currentRows = [];
   transformedRows = [];
-  nationalityMap = new Map();
   renderPreview([]);
   renderTransformedPreview([]);
-  updateMappingStatus();
   switchView("original");
   updateStatus([]);
 }
 
 loadButton.addEventListener("click", loadPreview);
-loadMappingButton.addEventListener("click", loadMapping);
 exportButton.addEventListener("click", exportXml);
 clearButton.addEventListener("click", clearAll);
 showOriginalButton.addEventListener("click", () => switchView("original"));
@@ -454,10 +479,6 @@ showTransformedButton.addEventListener("click", () => switchView("transformed"))
 
 pasteArea.addEventListener("paste", () => {
   window.setTimeout(loadPreview, 0);
-});
-
-mappingArea.addEventListener("paste", () => {
-  window.setTimeout(loadMapping, 0);
 });
 
 pasteArea.addEventListener("input", () => {
@@ -486,5 +507,5 @@ transformedBody.addEventListener("keydown", (event) => {
 
 renderPreview([]);
 renderTransformedPreview([]);
-updateMappingStatus();
 switchView("original");
+loadNationalityFile();

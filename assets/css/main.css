@@ -176,10 +176,6 @@ textarea:focus {
   gap: 10px;
 }
 
-.mapping-input {
-  min-height: 120px;
-}
-
 button {
   appearance: none;
   border: 0;

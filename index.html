@@ -34,19 +34,14 @@
         <div class="controls">
           <div class="field">
             <label for="pasteArea">Spreadsheet paste</label>
-            <textarea id="pasteArea" spellcheck="false" placeholder="Paste rows here from Excel or Google Sheets...\n\nExpected columns: time in | gmail | name | DOB | passport number | nationality | check-in date | check-out date | phone number | number of date staying"></textarea>
-          </div>
-          <div class="field">
-            <label for="mappingArea">Nationality mapping paste</label>
-            <textarea id="mappingArea" class="mapping-input" spellcheck="false" placeholder="AFG - Afghanistan&#9;AFG&#10;ALB - Albania&#9;ALB"></textarea>
+            <textarea id="pasteArea" spellcheck="false" placeholder="Paste rows here from Excel or Google Sheets...\n\nExpected columns: time in | gmail | name | gender | DOB | passport number | nationality | check-out date | phone number | number of date staying"></textarea>
           </div>
           <div class="button-row">
             <button class="primary" id="loadButton" type="button">Load preview</button>
-            <button class="secondary" id="loadMappingButton" type="button">Load mapping</button>
             <button class="secondary" id="exportButton" type="button">Export XML</button>
             <button class="secondary" id="clearButton" type="button">Clear</button>
           </div>
-          <div class="status" id="mappingStatus">Nationality mapping is empty. Codes in transformed view can still be edited manually.</div>
+          <div class="status" id="mappingStatus">Loading nationality mapping...</div>
           <div class="status" id="statusBox">Waiting for pasted rows.</div>
         </div>
       </section>
@@ -74,10 +69,10 @@
                   <th>A <span class="col-note">time in</span></th>
                   <th>B <span class="col-note">gmail</span></th>
                   <th>C <span class="col-note">name</span></th>
-                  <th>D <span class="col-note">DOB</span></th>
-                  <th>E <span class="col-note">passport number</span></th>
-                  <th>F <span class="col-note">nationality</span></th>
-                  <th>G <span class="col-note">check-in date</span></th>
+                  <th>D <span class="col-note">gender</span></th>
+                  <th>E <span class="col-note">DOB</span></th>
+                  <th>F <span class="col-note">passport number</span></th>
+                  <th>G <span class="col-note">nationality</span></th>
                   <th>H <span class="col-note">check-out date</span></th>
                   <th>I <span class="col-note">phone number</span></th>
                   <th>J <span class="col-note">number of date staying</span></th>
@@ -94,14 +89,16 @@
               <thead>
                 <tr>
                   <th>Row</th>
-                  <th>order number</th>
                   <th>name</th>
+                  <th>DOB</th>
                   <th>birthdate correct up to</th>
+                  <th>gender</th>
                   <th>nationality code</th>
                   <th>passport number</th>
                   <th>arrival date</th>
                   <th>expected leaving date</th>
                   <th>checkout date</th>
+                  <th>room number</th>
                 </tr>
               </thead>
               <tbody id="transformedBody"></tbody>
