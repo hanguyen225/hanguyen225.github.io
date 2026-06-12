@@ -38,8 +38,10 @@
           </div>
           <div class="button-row">
             <button class="primary" id="loadButton" type="button">Load preview</button>
+            <button class="secondary" id="saveToDbButton" type="button">Save to Database</button>
             <button class="secondary" id="exportButton" type="button">Export XML</button>
             <button class="secondary" id="clearButton" type="button">Clear</button>
+            <button class="secondary" id="demoButton" type="button">Demo Data</button>
           </div>
           <div class="status" id="mappingStatus">Loading nationality mapping...</div>
           <div class="status" id="statusBox">Waiting for pasted rows.</div>
@@ -56,6 +58,7 @@
             <div class="view-switch" role="tablist" aria-label="Preview mode">
               <button id="showOriginalButton" class="switch-btn active" type="button" aria-selected="true">Original preview</button>
               <button id="showTransformedButton" class="switch-btn" type="button" aria-selected="false">Transformed table</button>
+              <button id="showDbButton" class="switch-btn" type="button" aria-selected="false">Guest Database</button>
             </div>
             <div class="meta" id="rowCount">0 rows loaded</div>
           </div>
@@ -102,6 +105,35 @@
                 </tr>
               </thead>
               <tbody id="transformedBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="dbView" class="view-panel" aria-hidden="true">
+          <div class="db-controls" style="padding: 14px 20px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid var(--grid); background: rgba(255, 255, 255, 0.5);">
+            <button class="secondary" id="exportDbButton" type="button" style="padding: 8px 14px; font-size: 13px;">Export selected to XML</button>
+            <button class="secondary" id="clearDbButton" type="button" style="padding: 8px 14px; font-size: 13px; color: #a30000; border-color: rgba(163,0,0,0.15); background: rgba(163,0,0,0.03);">Clear Database</button>
+          </div>
+          <div class="grid-shell">
+            <table aria-label="Guest database log">
+              <thead>
+                <tr>
+                  <th style="width: 50px; text-align: center; background: linear-gradient(180deg, #16252a, #1d3137);"><input type="checkbox" id="selectAllDb" style="cursor: pointer;" /></th>
+                  <th style="width: 70px;">Row</th>
+                  <th>name</th>
+                  <th>DOB</th>
+                  <th>birthdate correct up to</th>
+                  <th>gender</th>
+                  <th>nationality code</th>
+                  <th>passport number</th>
+                  <th>arrival date</th>
+                  <th>expected leaving date</th>
+                  <th>checkout date</th>
+                  <th>room number</th>
+                  <th style="width: 100px;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="dbBody"></tbody>
             </table>
           </div>
         </div>

@@ -51,3 +51,41 @@ export function renderTransformedPreview(rows, transformedBody) {
 
   transformedBody.innerHTML = html;
 }
+
+export function renderDbPreview(guests, dbBody) {
+  if (guests.length === 0) {
+    dbBody.innerHTML = `
+      <tr class="empty">
+        <td colspan="13" style="text-align: center;">No guests logged in the database yet.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  const html = guests
+    .map(
+      (guest, index) => `
+        <tr data-guest-id="${guest.id}">
+          <td style="text-align: center;"><input type="checkbox" class="db-select" data-id="${guest.id}" style="cursor: pointer;" /></td>
+          <td>${index + 1}</td>
+          <td>${escapeHtml(guest.name)}</td>
+          <td>${escapeHtml(guest.dob)}</td>
+          <td>${escapeHtml(guest.birthdateCorrectUpTo)}</td>
+          <td>${escapeHtml(guest.gender)}</td>
+          <td>${escapeHtml(guest.nationalityCode)}</td>
+          <td>${escapeHtml(guest.passportNumber)}</td>
+          <td>${escapeHtml(guest.arrivalDate)}</td>
+          <td>${escapeHtml(guest.expectedLeavingDate)}</td>
+          <td>${escapeHtml(guest.checkoutDate)}</td>
+          <td>${escapeHtml(guest.roomNumber)}</td>
+          <td>
+            <button class="delete-btn secondary" data-id="${guest.id}" style="padding: 4px 8px; font-size: 11px; margin: 0; background: #ffebeb; color: #cc0000; border-color: #ffcccc; border-radius: 6px; font-weight: 700; width: 100%;">Delete</button>
+          </td>
+        </tr>
+      `,
+    )
+    .join("");
+
+  dbBody.innerHTML = html;
+}
+
