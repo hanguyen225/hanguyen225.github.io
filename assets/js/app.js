@@ -16,6 +16,24 @@ import {
   renderPreview,
   renderTransformedPreview,
   renderDbPreview,
+import {
+  normalizeCellValue,
+  normalizeCountryName,
+  parseTimeInToDate,
+  formatDateDdMmYyyy,
+  addDays,
+} from "./utils.js";
+
+import {
+  parsePaste,
+  parseMapping,
+  mapGenderToCode,
+} from "./parser.js";
+
+import {
+  renderPreview,
+  renderTransformedPreview,
+  renderDbPreview,
 } from "./renderer.js";
 
 import {
@@ -28,6 +46,7 @@ import {
   deleteGuest,
   clearAllGuests,
 } from "./db.js";
+import { loginAsAdmin, loginAsGuest, logout, getRole, updateUI, isAdmin } from "./auth.js";
 
 const columns = [
   { key: "time in", tag: "time_in" },
@@ -390,10 +409,43 @@ showOriginalButton.addEventListener("click", () => switchView("original"));
 showTransformedButton.addEventListener("click", () => switchView("transformed"));
 
 // Database logs actions
-showDbButton.addEventListener("click", () => switchView("db"));
+showDbButton.addEventListener("click", () => {
+  if (isAdmin()) {
+    switchView("db");
+  } else {
+    alert("Admin login required to view the database");
+  }
+});
 clearDbButton.addEventListener("click", clearDatabase);
 exportDbButton.addEventListener("click", exportSelectedDbXml);
 
+// Login modal event handlers
+const loginModal = document.getElementById("loginModal");
+const adminPwdInput = document.getElementById("adminPassword");
+const adminLoginBtn = document.getElementById("adminLoginBtn");
+const guestLoginBtn = document.getElementById("guestLoginBtn");
+const logoutBtn = document.getElementById("logoutButton");
+
+adminLoginBtn?.addEventListener("click", () => {
+  const pwd = adminPwdInput.value;
+  if (loginAsAdmin(pwd)) {
+    updateUI();
+  } else {
+    alert("Incorrect admin password");
+  }
+});
+
+guestLoginBtn?.addEventListener("click", () => {
+  loginAsGuest();
+  updateUI();
+});
+
+logoutBtn?.addEventListener("click", () => {
+  logout();
+  updateUI();
+});
+
+// Existing selectAllDb listener
 selectAllDb.addEventListener("change", () => {
   const checked = selectAllDb.checked;
   const checkboxes = dbBody.querySelectorAll(".db-select");
@@ -433,7 +485,37 @@ pasteArea.addEventListener("input", () => {
 });
 
 transformedBody.addEventListener("blur", handleTransformedEdit, true);
+
+// Original preview editable handling
+previewBody.addEventListener("blur", handleOriginalEdit, true);
+
+function handleOriginalEdit(event) {
+  const cell = event.target;
+  if (!cell || !cell.dataset || typeof cell.dataset.colIndex === 'undefined') {
+    return;
+  }
+  const rowElement = cell.closest('tr');
+  if (!rowElement) return;
+  const rowIndex = Number.parseInt(rowElement.dataset.rowIndex, 10);
+  const colIdx = Number.parseInt(cell.dataset.colIndex, 10);
+  if (Number.isNaN(rowIndex) || Number.isNaN(colIdx) || !currentRows[rowIndex]) {
+    return;
+  }
+  // Update the underlying data model
+  currentRows[rowIndex][colIdx] = cell.textContent.trim();
+  // Refresh transformed view based on edited original data
+  refreshTransformed();
+  updateStatus(currentRows);
+}
+
 transformedBody.addEventListener("keydown", (event) => {
+  // Also handle Enter key for original preview cells
+  const target = event.target;
+  if (event.key === "Enter" && target && target.classList && target.classList.contains("editable-cell")) {
+    event.preventDefault();
+    target.blur();
+  }
+
   const target = event.target;
   if (
     event.key === "Enter" &&
@@ -450,3 +532,5 @@ renderPreview([], previewBody, maxRows, columns);
 renderTransformedPreview([], transformedBody);
 switchView("original");
 loadNationalityFile();
+// Initialize authentication UI based on stored role
+updateUI();

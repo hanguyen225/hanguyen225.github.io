@@ -140,10 +140,21 @@
       </section>
     </section>
 
-    <p class="footer-note">
-      This first version focuses on paste-in data and XML export. If you want the XML format to match a specific downstream system later, the exporter can be swapped without changing the input flow.
-    </p>
-  </main>
+    <!-- Logout button (visible after login) -->
+    <button id="logoutButton" class="secondary" type="button" style="position: fixed; top: 20px; right: 20px; display:none;">Logout</button>
+
+    <!-- Login Modal -->
+    <dialog id="loginModal" style="border:none; border-radius:8px; padding:20px; max-width:300px;">
+      <h2>Login</h2>
+      <div style="margin-bottom:10px;">
+        <label for="adminPassword">Admin Password:</label>
+        <input type="password" id="adminPassword" placeholder="Password" style="width:100%;"/>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button id="adminLoginBtn" class="primary" type="button">Login as Admin</button>
+        <button id="guestLoginBtn" class="secondary" type="button">Continue as Guest</button>
+      </div>
+    </dialog>
 
   <script type="module" src="assets/js/app.js" defer></script>
 </body>

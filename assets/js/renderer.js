@@ -6,10 +6,10 @@ export function renderPreview(rows, previewBody, maxRows, columns) {
   for (let index = 0; index < maxRows; index += 1) {
     const row = rows[index] || Array(columns.length).fill("");
     const isEmpty = !rows[index];
-    const cells = row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("");
+    const cells = row.map((cell, colIdx) => `	<td class="editable-cell" contenteditable="true" data-col-index="${colIdx}">${escapeHtml(cell)}</td>`).join("");
 
     fillRows.push(`
-      <tr class="${isEmpty ? "empty" : ""}">
+      <tr data-row-index="${index}" class="${isEmpty ? "empty" : ""}">
         <td>${index + 1}</td>
         ${cells}
       </tr>
