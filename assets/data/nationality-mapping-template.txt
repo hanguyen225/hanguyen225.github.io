@@ -1,0 +1,29 @@
+AFG - Afghanistan	AFG
+ALB - Albania	ALB
+DZA - Algeria	DZA
+AND - Andorra	AND
+AGO - Angola	AGO
+ARG - Argentina	ARG
+ARM - Armenia	ARM
+AUS - Australia	AUS
+AUT - Austria	AUT
+AZE - Azerbaijan	AZE
+BEL - Belgium	BEL
+BRA - Brazil	BRA
+CAN - Canada	CAN
+CHN - China	CHN
+DEU - Germany	DEU
+ESP - Spain	ESP
+FRA - France	FRA
+GBR - United Kingdom	GBR
+IND - India	IND
+ITA - Italy	ITA
+JPN - Japan	JPN
+KOR - South Korea	KOR
+MYS - Malaysia	MYS
+NLD - Netherlands	NLD
+PHL - Philippines	PHL
+SGP - Singapore	SGP
+THA - Thailand	THA
+USA - United States	USA
+VNM - Vietnam	VNM
