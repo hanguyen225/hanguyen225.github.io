@@ -16,24 +16,6 @@ import {
   renderPreview,
   renderTransformedPreview,
   renderDbPreview,
-import {
-  normalizeCellValue,
-  normalizeCountryName,
-  parseTimeInToDate,
-  formatDateDdMmYyyy,
-  addDays,
-} from "./utils.js";
-
-import {
-  parsePaste,
-  parseMapping,
-  mapGenderToCode,
-} from "./parser.js";
-
-import {
-  renderPreview,
-  renderTransformedPreview,
-  renderDbPreview,
 } from "./renderer.js";
 
 import {
@@ -46,111 +28,116 @@ import {
   deleteGuest,
   clearAllGuests,
 } from "./db.js";
-import { loginAsAdmin, loginAsGuest, logout, getRole, updateUI, isAdmin } from "./auth.js";
 
+import {
+  loginAsAdmin,
+  loginAsGuest,
+  logout,
+  updateUI,
+  isAdmin,
+} from "./auth.js";
+
+// ─── column definitions ───────────────────────────────────────────────────────
 const columns = [
-  { key: "time in", tag: "time_in" },
-  { key: "gmail", tag: "gmail" },
-  { key: "name", tag: "name" },
-  { key: "gender", tag: "gender" },
-  { key: "DOB", tag: "dob" },
-  { key: "passport number", tag: "passport_number" },
-  { key: "nationality", tag: "nationality" },
-  { key: "check-out date", tag: "check_out_date" },
-  { key: "phone number", tag: "phone_number" },
-  { key: "number of date staying", tag: "number_of_date_staying" },
+  { key: "time in",                  tag: "time_in" },
+  { key: "gmail",                    tag: "gmail" },
+  { key: "name",                     tag: "name" },
+  { key: "gender",                   tag: "gender" },
+  { key: "DOB",                      tag: "dob" },
+  { key: "passport number",          tag: "passport_number" },
+  { key: "nationality",              tag: "nationality" },
+  { key: "check-out date",           tag: "check_out_date" },
+  { key: "phone number",             tag: "phone_number" },
+  { key: "number of date staying",   tag: "number_of_date_staying" },
 ];
 
-const transformedColumns = [
-  { key: "name", tag: "name" },
-  { key: "DOB", tag: "DOB" },
-  { key: "birthdate correct up to", tag: "birthdate_correct_up_to" },
-  { key: "gender", tag: "gender" },
-  { key: "nationality code", tag: "nationality_code" },
-  { key: "passport number", tag: "passport_number" },
-  { key: "arrival date", tag: "arrival_date" },
-  { key: "expected leaving date", tag: "expected_leaving_date" },
-  { key: "checkout date", tag: "checkout_date" },
-  { key: "room number", tag: "room_number" },
-];
-
-const maxRows = 100;
-const previewBody = document.getElementById("previewBody");
-const transformedBody = document.getElementById("transformedBody");
-const pasteArea = document.getElementById("pasteArea");
-const statusBox = document.getElementById("statusBox");
-const mappingStatus = document.getElementById("mappingStatus");
-const rowCount = document.getElementById("rowCount");
-const loadButton = document.getElementById("loadButton");
-const exportButton = document.getElementById("exportButton");
-const clearButton = document.getElementById("clearButton");
-const demoButton = document.getElementById("demoButton");
-const showOriginalButton = document.getElementById("showOriginalButton");
+// ─── DOM refs ─────────────────────────────────────────────────────────────────
+const maxRows           = 100;
+const previewBody       = document.getElementById("previewBody");
+const transformedBody   = document.getElementById("transformedBody");
+const pasteArea         = document.getElementById("pasteArea");
+const statusBox         = document.getElementById("statusBox");
+const mappingStatus     = document.getElementById("mappingStatus");
+const rowCount          = document.getElementById("rowCount");
+const loadButton        = document.getElementById("loadButton");
+const exportButton      = document.getElementById("exportButton");
+const clearButton       = document.getElementById("clearButton");
+const demoButton        = document.getElementById("demoButton");
+const showOriginalButton    = document.getElementById("showOriginalButton");
 const showTransformedButton = document.getElementById("showTransformedButton");
-const originalView = document.getElementById("originalView");
-const transformedView = document.getElementById("transformedView");
+const originalView      = document.getElementById("originalView");
+const transformedView   = document.getElementById("transformedView");
 
-// Database elements
+// database
 const saveToDbButton = document.getElementById("saveToDbButton");
-const showDbButton = document.getElementById("showDbButton");
-const dbView = document.getElementById("dbView");
-const dbBody = document.getElementById("dbBody");
+const showDbButton   = document.getElementById("showDbButton");
+const dbView         = document.getElementById("dbView");
+const dbBody         = document.getElementById("dbBody");
 const exportDbButton = document.getElementById("exportDbButton");
-const clearDbButton = document.getElementById("clearDbButton");
-const selectAllDb = document.getElementById("selectAllDb");
+const clearDbButton  = document.getElementById("clearDbButton");
+const selectAllDb    = document.getElementById("selectAllDb");
 
-let currentRows = [];
+// auth
+const loginModal    = document.getElementById("loginModal");
+const adminPwdInput = document.getElementById("adminPassword");
+const adminLoginBtn = document.getElementById("adminLoginBtn");
+const guestLoginBtn = document.getElementById("guestLoginBtn");
+const logoutBtn     = document.getElementById("logoutButton");
+
+// ─── state ────────────────────────────────────────────────────────────────────
+let currentRows    = [];
 let transformedRows = [];
-let nationalityMap = new Map();
-let currentView = "original";
+let nationalityMap  = new Map();
+let currentView     = "original";
 
+// ─── helpers ──────────────────────────────────────────────────────────────────
 function mapNationalityToCode(nationality) {
   const normalized = normalizeCountryName(nationality);
-  if (!normalized) {
-    return "";
-  }
+  if (!normalized) return "";
   return nationalityMap.get(normalized) || "";
 }
 
 function toTransformedRows(rows) {
-  const nonEmptyRows = rows.filter((row) => row.some((cell) => normalizeCellValue(cell) !== ""));
+  const nonEmptyRows = rows.filter((row) =>
+    row.some((cell) => normalizeCellValue(cell) !== "")
+  );
 
   return nonEmptyRows.map((row, index) => {
     const parsedArrival = parseTimeInToDate(row[0]);
-    const stayingDays = Number.parseInt(normalizeCellValue(row[9]), 10);
+    const stayingDays   = Number.parseInt(normalizeCellValue(row[9]), 10);
 
     if (parsedArrival) {
-      const arrivalDate = formatDateDdMmYyyy(parsedArrival);
-      const safeDays = Number.isNaN(stayingDays) ? 0 : stayingDays;
-      const expectedDate = formatDateDdMmYyyy(addDays(parsedArrival, safeDays));
+      const arrivalDate    = formatDateDdMmYyyy(parsedArrival);
+      const safeDays       = Number.isNaN(stayingDays) ? 0 : stayingDays;
+      const expectedDate   = formatDateDdMmYyyy(addDays(parsedArrival, safeDays));
       return {
-        row: String(index + 1),
-        name: normalizeCellValue(row[2]).toUpperCase(),
-        dob: normalizeCellValue(row[4]),
+        row:                  String(index + 1),
+        name:                 normalizeCellValue(row[2]).toUpperCase(),
+        dob:                  normalizeCellValue(row[4]),
         birthdateCorrectUpTo: "D",
-        gender: mapGenderToCode(row[3]),
-        nationalityCode: mapNationalityToCode(row[6]),
-        passportNumber: normalizeCellValue(row[5]),
+        gender:               mapGenderToCode(row[3]),
+        nationalityCode:      mapNationalityToCode(row[6]),
+        passportNumber:       normalizeCellValue(row[5]),
         arrivalDate,
-        expectedLeavingDate: expectedDate,
-        checkoutDate: expectedDate,
-        roomNumber: "",
+        expectedLeavingDate:  expectedDate,
+        checkoutDate:         expectedDate,
+        roomNumber:           "",
       };
     }
 
     const fallback = normalizeCellValue(row[0]);
     return {
-      row: String(index + 1),
-      name: normalizeCellValue(row[2]).toUpperCase(),
-      dob: normalizeCellValue(row[4]),
+      row:                  String(index + 1),
+      name:                 normalizeCellValue(row[2]).toUpperCase(),
+      dob:                  normalizeCellValue(row[4]),
       birthdateCorrectUpTo: "D",
-      gender: mapGenderToCode(row[3]),
-      nationalityCode: mapNationalityToCode(row[6]),
-      passportNumber: normalizeCellValue(row[5]),
-      arrivalDate: fallback,
-      expectedLeavingDate: fallback,
-      checkoutDate: fallback,
-      roomNumber: "",
+      gender:               mapGenderToCode(row[3]),
+      nationalityCode:      mapNationalityToCode(row[6]),
+      passportNumber:       normalizeCellValue(row[5]),
+      arrivalDate:          fallback,
+      expectedLeavingDate:  fallback,
+      checkoutDate:         fallback,
+      roomNumber:           "",
     };
   });
 }
@@ -166,11 +153,10 @@ function updateStatus(rows, warnings = []) {
     parts.push("Export XML uses transformed table values (including manual edits).");
   }
 
-  if (warnings.length > 0) {
-    parts.push(warnings.join(" "));
-  }
+  if (warnings.length > 0) parts.push(warnings.join(" "));
 
   statusBox.textContent = parts.join("\n");
+
   if (currentView === "original") {
     rowCount.textContent = `${rows.length} row${rows.length === 1 ? "" : "s"} loaded`;
   } else if (currentView === "transformed") {
@@ -184,8 +170,6 @@ function updateMappingStatus() {
     mappingStatus.textContent = "Nationality mapping is empty. Codes in transformed view can still be edited manually.";
     return;
   }
-
-  // Divide size by 2 since each line maps both name-only and prefix-name fallback
   const uniqueCount = Math.ceil(count / 2);
   mappingStatus.textContent = `Loaded ${uniqueCount} nationality mapping row${uniqueCount === 1 ? "" : "s"} from 'nationality.txt' file.`;
 }
@@ -197,7 +181,7 @@ function refreshTransformed() {
 
 function loadPreview() {
   const parsed = parsePaste(pasteArea.value, columns, maxRows);
-  currentRows = parsed.rows;
+  currentRows  = parsed.rows;
   renderPreview(currentRows, previewBody, maxRows, columns);
   refreshTransformed();
   updateStatus(currentRows, parsed.warnings);
@@ -207,13 +191,10 @@ async function loadNationalityFile() {
   try {
     mappingStatus.textContent = "Loading nationality mapping from file...";
     const response = await fetch("./nationality.txt");
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const text = await response.text();
     nationalityMap = parseMapping(text);
     updateMappingStatus();
-
     if (currentRows.length > 0) {
       refreshTransformed();
       updateStatus(currentRows);
@@ -238,25 +219,25 @@ async function refreshDbList() {
 async function switchView(targetView) {
   currentView = targetView;
 
-  const showOriginal = targetView === "original";
+  const showOriginal    = targetView === "original";
   const showTransformed = targetView === "transformed";
-  const showDb = targetView === "db";
+  const showDb          = targetView === "db";
 
   originalView.classList.toggle("active", showOriginal);
   transformedView.classList.toggle("active", showTransformed);
   dbView.classList.toggle("active", showDb);
 
-  originalView.setAttribute("aria-hidden", showOriginal ? "false" : "true");
+  originalView.setAttribute("aria-hidden",    showOriginal    ? "false" : "true");
   transformedView.setAttribute("aria-hidden", showTransformed ? "false" : "true");
-  dbView.setAttribute("aria-hidden", showDb ? "false" : "true");
+  dbView.setAttribute("aria-hidden",          showDb          ? "false" : "true");
 
-  showOriginalButton.classList.toggle("active", showOriginal);
+  showOriginalButton.classList.toggle("active",    showOriginal);
   showTransformedButton.classList.toggle("active", showTransformed);
-  showDbButton.classList.toggle("active", showDb);
+  showDbButton.classList.toggle("active",          showDb);
 
-  showOriginalButton.setAttribute("aria-selected", showOriginal ? "true" : "false");
+  showOriginalButton.setAttribute("aria-selected",    showOriginal    ? "true" : "false");
   showTransformedButton.setAttribute("aria-selected", showTransformed ? "true" : "false");
-  showDbButton.setAttribute("aria-selected", showDb ? "true" : "false");
+  showDbButton.setAttribute("aria-selected",          showDb          ? "true" : "false");
 
   if (showOriginal) {
     rowCount.textContent = `${currentRows.length} row${currentRows.length === 1 ? "" : "s"} loaded`;
@@ -269,47 +250,55 @@ async function switchView(targetView) {
   }
 }
 
+// ─── edit handlers ────────────────────────────────────────────────────────────
 function handleTransformedEdit(event) {
   const cell = event.target;
-  if (!cell || !cell.dataset || !cell.dataset.field) {
-    return;
-  }
+  if (!cell?.dataset?.field) return;
 
   const rowElement = cell.closest("tr");
-  if (!rowElement) {
-    return;
-  }
+  if (!rowElement) return;
 
   const rowIndex = Number.parseInt(rowElement.dataset.rowIndex, 10);
-  if (Number.isNaN(rowIndex) || !transformedRows[rowIndex]) {
-    return;
-  }
+  if (Number.isNaN(rowIndex) || !transformedRows[rowIndex]) return;
 
   let value = normalizeCellValue(cell.textContent);
   if (cell.dataset.field === "gender") {
     value = mapGenderToCode(value);
     cell.textContent = value;
   }
-
   transformedRows[rowIndex][cell.dataset.field] = value;
 }
 
+function handleOriginalEdit(event) {
+  const cell = event.target;
+  if (!cell?.dataset || cell.dataset.colIndex === undefined) return;
+
+  const rowElement = cell.closest("tr");
+  if (!rowElement) return;
+
+  const rowIndex = Number.parseInt(rowElement.dataset.rowIndex, 10);
+  const colIdx   = Number.parseInt(cell.dataset.colIndex, 10);
+  if (Number.isNaN(rowIndex) || Number.isNaN(colIdx) || !currentRows[rowIndex]) return;
+
+  currentRows[rowIndex][colIdx] = cell.textContent.trim();
+  refreshTransformed();
+  updateStatus(currentRows);
+}
+
+// ─── export / save / clear ───────────────────────────────────────────────────
 function exportXml() {
-  if (currentRows.length === 0) {
-    loadPreview();
-  }
+  if (currentRows.length === 0) loadPreview();
 
   if (transformedRows.length === 0) {
     updateStatus(currentRows, ["Nothing to export yet. Paste spreadsheet rows first."]);
     return;
   }
 
-  const xml = buildTransformedXml(transformedRows);
+  const xml  = buildTransformedXml(transformedRows);
   const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
+  const url  = URL.createObjectURL(blob);
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const link = document.createElement("a");
-
   link.href = url;
   link.download = `sheet-export-${stamp}.xml`;
   document.body.appendChild(link);
@@ -357,7 +346,7 @@ async function exportSelectedDbXml() {
 
   const ids = Array.from(selectedCheckboxes).map((cb) => Number.parseInt(cb.dataset.id, 10));
   try {
-    const allGuests = await getAllGuests();
+    const allGuests      = await getAllGuests();
     const selectedGuests = allGuests.filter((g) => ids.includes(g.id));
 
     if (selectedGuests.length === 0) {
@@ -365,12 +354,11 @@ async function exportSelectedDbXml() {
       return;
     }
 
-    const xml = buildTransformedXml(selectedGuests);
+    const xml  = buildTransformedXml(selectedGuests);
     const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
+    const url  = URL.createObjectURL(blob);
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     const link = document.createElement("a");
-
     link.href = url;
     link.download = `database-selected-export-${stamp}.xml`;
     document.body.appendChild(link);
@@ -387,7 +375,7 @@ async function exportSelectedDbXml() {
 
 function clearAll() {
   pasteArea.value = "";
-  currentRows = [];
+  currentRows     = [];
   transformedRows = [];
   renderPreview([], previewBody, maxRows, columns);
   renderTransformedPreview([], transformedBody);
@@ -400,58 +388,30 @@ function loadDemoData() {
   loadPreview();
 }
 
+// ─── event listeners ──────────────────────────────────────────────────────────
 loadButton.addEventListener("click", loadPreview);
 saveToDbButton.addEventListener("click", saveToDatabase);
 exportButton.addEventListener("click", exportXml);
 clearButton.addEventListener("click", clearAll);
 demoButton.addEventListener("click", loadDemoData);
-showOriginalButton.addEventListener("click", () => switchView("original"));
+showOriginalButton.addEventListener("click",    () => switchView("original"));
 showTransformedButton.addEventListener("click", () => switchView("transformed"));
 
-// Database logs actions
 showDbButton.addEventListener("click", () => {
   if (isAdmin()) {
     switchView("db");
   } else {
-    alert("Admin login required to view the database");
+    alert("Admin login required to view the database.");
   }
 });
+
 clearDbButton.addEventListener("click", clearDatabase);
 exportDbButton.addEventListener("click", exportSelectedDbXml);
 
-// Login modal event handlers
-const loginModal = document.getElementById("loginModal");
-const adminPwdInput = document.getElementById("adminPassword");
-const adminLoginBtn = document.getElementById("adminLoginBtn");
-const guestLoginBtn = document.getElementById("guestLoginBtn");
-const logoutBtn = document.getElementById("logoutButton");
-
-adminLoginBtn?.addEventListener("click", () => {
-  const pwd = adminPwdInput.value;
-  if (loginAsAdmin(pwd)) {
-    updateUI();
-  } else {
-    alert("Incorrect admin password");
-  }
-});
-
-guestLoginBtn?.addEventListener("click", () => {
-  loginAsGuest();
-  updateUI();
-});
-
-logoutBtn?.addEventListener("click", () => {
-  logout();
-  updateUI();
-});
-
-// Existing selectAllDb listener
 selectAllDb.addEventListener("change", () => {
-  const checked = selectAllDb.checked;
+  const checked    = selectAllDb.checked;
   const checkboxes = dbBody.querySelectorAll(".db-select");
-  checkboxes.forEach((cb) => {
-    cb.checked = checked;
-  });
+  checkboxes.forEach((cb) => { cb.checked = checked; });
 });
 
 dbBody.addEventListener("click", async (event) => {
@@ -470,13 +430,11 @@ dbBody.addEventListener("click", async (event) => {
   }
 });
 
-pasteArea.addEventListener("paste", () => {
-  window.setTimeout(loadPreview, 0);
-});
+pasteArea.addEventListener("paste", () => { window.setTimeout(loadPreview, 0); });
 
 pasteArea.addEventListener("input", () => {
   if (pasteArea.value.trim() === "") {
-    currentRows = [];
+    currentRows     = [];
     transformedRows = [];
     renderPreview([], previewBody, maxRows, columns);
     renderTransformedPreview([], transformedBody);
@@ -484,53 +442,40 @@ pasteArea.addEventListener("input", () => {
   }
 });
 
+// Editable cell blur handlers
 transformedBody.addEventListener("blur", handleTransformedEdit, true);
-
-// Original preview editable handling
 previewBody.addEventListener("blur", handleOriginalEdit, true);
 
-function handleOriginalEdit(event) {
-  const cell = event.target;
-  if (!cell || !cell.dataset || typeof cell.dataset.colIndex === 'undefined') {
-    return;
-  }
-  const rowElement = cell.closest('tr');
-  if (!rowElement) return;
-  const rowIndex = Number.parseInt(rowElement.dataset.rowIndex, 10);
-  const colIdx = Number.parseInt(cell.dataset.colIndex, 10);
-  if (Number.isNaN(rowIndex) || Number.isNaN(colIdx) || !currentRows[rowIndex]) {
-    return;
-  }
-  // Update the underlying data model
-  currentRows[rowIndex][colIdx] = cell.textContent.trim();
-  // Refresh transformed view based on edited original data
-  refreshTransformed();
-  updateStatus(currentRows);
-}
-
-transformedBody.addEventListener("keydown", (event) => {
-  // Also handle Enter key for original preview cells
-  const target = event.target;
-  if (event.key === "Enter" && target && target.classList && target.classList.contains("editable-cell")) {
+// Enter key commits edit in any editable cell
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && event.target.classList.contains("editable-cell")) {
     event.preventDefault();
-    target.blur();
-  }
-
-  const target = event.target;
-  if (
-    event.key === "Enter" &&
-    target &&
-    target.classList &&
-    target.classList.contains("editable-cell")
-  ) {
-    event.preventDefault();
-    target.blur();
+    event.target.blur();
   }
 });
 
+// ─── auth handlers ────────────────────────────────────────────────────────────
+adminLoginBtn?.addEventListener("click", () => {
+  if (loginAsAdmin(adminPwdInput.value)) {
+    updateUI();
+  } else {
+    alert("Incorrect admin password.");
+  }
+});
+
+guestLoginBtn?.addEventListener("click", () => {
+  loginAsGuest();
+  updateUI();
+});
+
+logoutBtn?.addEventListener("click", () => {
+  logout();
+  updateUI();
+});
+
+// ─── init ─────────────────────────────────────────────────────────────────────
 renderPreview([], previewBody, maxRows, columns);
 renderTransformedPreview([], transformedBody);
 switchView("original");
 loadNationalityFile();
-// Initialize authentication UI based on stored role
-updateUI();
+updateUI(); // show login modal or restore session
