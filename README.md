@@ -1,18 +1,14 @@
-# handlerXML — Spreadsheet-to-XML Guest Registration Tool
+# handlerXML — xử lý dữ liệu hàng loạt
 
-A browser-based tool that replaces the broken Excel/Google Sheets workflow for preparing guest registration data as XML. Built because spreadsheet programs silently mangle dates, phone numbers, and text formatting — and no amount of cell-format tweaking fixes it reliably.
-
----
 
 ## The Problem
 
-Hotels and guesthouses that need to submit guest data as XML (`KHAI_BAO_TAM_TRU` format) typically start in Excel or Google Sheets. This falls apart fast:
+đối với các cơ sở lưu trú có hai lựa chọn chính: nhập liệu bằng tay (mất thời gian và nhân lực) hoặc sử dụng dịch vụ quản lý (ex: cloudbed) để export hàng loạt để khai báo nhưng phải bỏ ra chi phí lớn (250$/tháng đối với cloudbed), nhưng khi tìm hiểu kỹ ở web khai báo tạm trú của bộ công an, họ có cho phép nhập  hàng loạt sử dụng format .xml với cấu trúc họ cho sẵn (https://tbltkbtt.bocongan.gov.vn/auth/welcome)
 
-- **Date format mismatch.** The source data arrives as `mm/dd/yyyy hh:mm`, but the XML output needs `dd/mm/yyyy`. Excel reformats dates based on locale, so `06/11/2026` could be June 11 or November 6 depending on whose machine opens the file. Copy-pasting between sheets makes it worse.
-- **Cell format destroys values.** Phone numbers like `1284750000000` get turned into scientific notation (`1.28475E+12`). Passport numbers starting with `0` lose the leading zero. There is no undo — the original value is gone once Excel "corrects" it.
-- **Manual formula errors.** Calculating checkout dates (`arrival + stay duration`) with `=A1+J1` in Excel requires the cell to already be in date format. If it isn't, you get a serial number instead of a date. Multiply this across 20+ rows and errors are guaranteed.
+Nhưng khi tự tạo xml theo cách truyền thống (sử dụng excel) ta gặp những vấn đề sau:
+- **Format ngày tháng năm.** excel tự động format ngày tháng năm theo vùng, nếu máy cài excel sử dụng vùng miền khác sẽ tự động hiện ngày tháng năm theo mm/dd/yyyy thay vì dd/mm/yyyy, excel cũng đồng thời format ngày tháng năm theo giá trị như "23241" khiến cho việc export sang xml luôn gây lỗi cho việc nhập hàng loạt trên web bộ công an.
 
-This tool accepts the raw paste from a spreadsheet, parses it without reformatting, and generates correct XML directly.
+Chưa kể, excel update mà không báo trước cho người dùng, việc đó dễ dẫn đến lỗi script (formula) và khiến việc tự nhập liệu hàng loạt khó khăn hơn
 
 ---
 
@@ -152,6 +148,5 @@ npx serve .
 
 ---
 
-## License
+## Mức độ hoàn thiện: ~80% 
 
-MIT
