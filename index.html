@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sheet Paste to XML</title>
+  <link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="eyebrow">Paste sheet data to XML</div>
+      <h1>Turn Excel or Sheets rows into a downloadable XML file.</h1>
+      <p class="lede">
+        Paste tab-separated data directly from Google Sheets or Excel. The page keeps the 10 fixed columns,
+        supports up to 100 rows, and exports the parsed table as a client-side XML file with no backend.
+      </p>
+      <div class="stats">
+        <div class="stat"><strong>10</strong> fixed columns</div>
+        <div class="stat"><strong>100</strong> row limit</div>
+        <div class="stat"><strong>XML</strong> download only</div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <section class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Paste input</h2>
+          <p class="panel-copy">
+            Paste spreadsheet rows directly here. Tabs become columns, new lines become rows.
+            The first row is auto-detected as a header if it matches the expected names.
+          </p>
+        </div>
+        <div class="controls">
+          <div class="field">
+            <label for="pasteArea">Spreadsheet paste</label>
+            <textarea id="pasteArea" spellcheck="false" placeholder="Paste rows here from Excel or Google Sheets...\n\nExpected columns: time in | gmail | name | DOB | passport number | nationality | check-in date | check-out date | phone number | number of date staying"></textarea>
+          </div>
+          <div class="field">
+            <label for="mappingArea">Nationality mapping paste</label>
+            <textarea id="mappingArea" class="mapping-input" spellcheck="false" placeholder="AFG - Afghanistan&#9;AFG&#10;ALB - Albania&#9;ALB"></textarea>
+          </div>
+          <div class="button-row">
+            <button class="primary" id="loadButton" type="button">Load preview</button>
+            <button class="secondary" id="loadMappingButton" type="button">Load mapping</button>
+            <button class="secondary" id="exportButton" type="button">Export XML</button>
+            <button class="secondary" id="clearButton" type="button">Clear</button>
+          </div>
+          <div class="status" id="mappingStatus">Nationality mapping is empty. Codes in transformed view can still be edited manually.</div>
+          <div class="status" id="statusBox">Waiting for pasted rows.</div>
+        </div>
+      </section>
+
+      <section class="panel preview-wrap">
+        <div class="preview-head">
+          <div>
+            <h2 class="panel-title" style="margin-bottom: 4px;">100-row workspace preview</h2>
+            <div class="meta">A to J columns stay fixed. Blank rows remain visible until data is pasted.</div>
+          </div>
+          <div class="preview-controls">
+            <div class="view-switch" role="tablist" aria-label="Preview mode">
+              <button id="showOriginalButton" class="switch-btn active" type="button" aria-selected="true">Original preview</button>
+              <button id="showTransformedButton" class="switch-btn" type="button" aria-selected="false">Transformed table</button>
+            </div>
+            <div class="meta" id="rowCount">0 rows loaded</div>
+          </div>
+        </div>
+        <div id="originalView" class="view-panel active">
+          <div class="grid-shell">
+            <table aria-label="Spreadsheet preview">
+              <thead>
+                <tr>
+                  <th>Row</th>
+                  <th>A <span class="col-note">time in</span></th>
+                  <th>B <span class="col-note">gmail</span></th>
+                  <th>C <span class="col-note">name</span></th>
+                  <th>D <span class="col-note">DOB</span></th>
+                  <th>E <span class="col-note">passport number</span></th>
+                  <th>F <span class="col-note">nationality</span></th>
+                  <th>G <span class="col-note">check-in date</span></th>
+                  <th>H <span class="col-note">check-out date</span></th>
+                  <th>I <span class="col-note">phone number</span></th>
+                  <th>J <span class="col-note">number of date staying</span></th>
+                </tr>
+              </thead>
+              <tbody id="previewBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="transformedView" class="view-panel" aria-hidden="true">
+          <div class="grid-shell">
+            <table aria-label="Transformed editable preview">
+              <thead>
+                <tr>
+                  <th>Row</th>
+                  <th>order number</th>
+                  <th>name</th>
+                  <th>birthdate correct up to</th>
+                  <th>nationality code</th>
+                  <th>passport number</th>
+                  <th>arrival date</th>
+                  <th>expected leaving date</th>
+                  <th>checkout date</th>
+                </tr>
+              </thead>
+              <tbody id="transformedBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <p class="footer-note">
+      This first version focuses on paste-in data and XML export. If you want the XML format to match a specific downstream system later, the exporter can be swapped without changing the input flow.
+    </p>
+  </main>
+
+  <script src="assets/js/app.js" defer></script>
+</body>
+</html>
