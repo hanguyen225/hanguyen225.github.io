@@ -4,6 +4,7 @@ import {
   parseTimeInToDate,
   formatDateDdMmYyyy,
   addDays,
+  normalizeDateString,
 } from "./utils.js";
 
 import {
@@ -107,7 +108,7 @@ function toTransformedRows(rows) {
       return {
         row: String(index + 1),
         name: normalizeCellValue(row[2]).toUpperCase(),
-        dob: normalizeCellValue(row[4]),
+        dob: normalizeDateString(row[4]),
         birthdateCorrectUpTo: "D",
         gender: mapGenderToCode(row[3]),
         nationalityCode: mapNationalityToCode(row[6]),
@@ -123,7 +124,7 @@ function toTransformedRows(rows) {
     return {
       row: String(index + 1),
       name: normalizeCellValue(row[2]).toUpperCase(),
-      dob: normalizeCellValue(row[4]),
+      dob: normalizeDateString(row[4]),
       birthdateCorrectUpTo: "D",
       gender: mapGenderToCode(row[3]),
       nationalityCode: mapNationalityToCode(row[6]),

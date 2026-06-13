@@ -80,11 +80,26 @@ export function mapGenderToCode(gender) {
   if (!val) {
     return "";
   }
-  if (val.startsWith("n") || val.startsWith("f") || val.includes("nữ") || val.includes("female")) {
+  // Check Vietnamese labels first (most specific)
+  if (val.includes("nam")) {
+    return "M";
+  }
+  if (val.includes("nữ")) {
     return "F";
   }
-  if (val.startsWith("m") || val.startsWith("nam") || val.includes("male")) {
+  // English labels — check "female" before "male" since "female" contains "male"
+  if (val.includes("female")) {
+    return "F";
+  }
+  if (val.includes("male")) {
     return "M";
+  }
+  // Single letter fallback
+  if (val.startsWith("m")) {
+    return "M";
+  }
+  if (val.startsWith("f") || val.startsWith("n")) {
+    return "F";
   }
   return "M";
 }
